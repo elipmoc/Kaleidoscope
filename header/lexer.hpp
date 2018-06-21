@@ -11,10 +11,17 @@ enum Token {
 	// primary
 	tok_identifier = -4,
 	tok_number = -5,
+
+	//no match
+	tok_none=-6
 };
 
-static std::string IdentifierStr; // Filled in if tok_identifier
-static double NumVal;             // Filled in if tok_number
+struct TokenResult {
+	Token token;
+	std::string identifierStr;
+	double numVal=0;
+	int thisChar=EOF;
+};
 
 /// gettok - Return the next token from standard input.
-int gettok();
+TokenResult gettok();

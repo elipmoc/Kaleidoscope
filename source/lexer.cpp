@@ -1,22 +1,24 @@
 #include "lexer.hpp"
 
 /// gettok - Return the next token from standard input.
-int gettok() {
+TokenResult gettok() {
 	static int LastChar = ' ';
 
 	// Skip any whitespace.
 	while (isspace(LastChar))
 		LastChar = getchar();
+	TokenResult tr;
 	if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
-		IdentifierStr = LastChar;
+		tr.identifierStr = LastChar;
 		while (isalnum((LastChar = getchar())))
-			IdentifierStr += LastChar;
+			tr.identifierStr += LastChar;
 
-		if (IdentifierStr == "def")
-			return tok_def;
-		if (IdentifierStr == "extern")
-			return tok_extern;
-		return tok_identifier;
+		if (tr.identifierStr == "def") 
+			tr.token = tok_def;
+		else if (tr.identifierStr == "extern")
+			tr.token = tok_extern;
+		else tr.token=tok_identifier;
+		return tr;
 	}
 	if (isdigit(LastChar) || LastChar == '.') {   // Number: [0-9.]+
 		std::string NumStr;
@@ -25,8 +27,9 @@ int gettok() {
 			LastChar = getchar();
 		} while (isdigit(LastChar) || LastChar == '.');
 
-		NumVal = strtod(NumStr.c_str(), NULL);
-		return tok_number;
+		tr.numVal = strtod(NumStr.c_str(), NULL);
+		tr.token = tok_number;
+		return tr;
 	}
 	if (LastChar == '#') {
 		// Comment until end of line.
@@ -38,11 +41,14 @@ int gettok() {
 			return gettok();
 	}
 	// Check for end of file.  Don't eat the EOF.
-	if (LastChar == EOF)
-		return tok_eof;
+	if (LastChar == EOF) {
+		tr.token = tok_eof;
+		return tr;
+	}
 
 	// Otherwise, just return the character as its ascii value.
-	int ThisChar = LastChar;
+	tr.thisChar = LastChar;
+	tr.token = tok_none;
 	LastChar = getchar();
-	return ThisChar;
+	return tr;
 }
