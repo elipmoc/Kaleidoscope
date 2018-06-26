@@ -6,6 +6,7 @@
 
 class ExprAST;
 class PrototypeAST;
+class FunctionAST;
 
 
 class Parser {
@@ -61,5 +62,18 @@ private:
 	/// binoprhs
 	///   ::= ('+' primary)*
 	std::unique_ptr<ExprAST> Parser::ParseBinOpRHS(int ExprPrec, std::unique_ptr<ExprAST> LHS);
+
+	/// prototype
+	///   ::= id '(' id* ')'
+	std::unique_ptr<PrototypeAST> ParsePrototype();
+
+	/// definition ::= 'def' prototype expression
+	std::unique_ptr<FunctionAST> ParseDefinition();
+
+	/// external ::= 'extern' prototype
+	std::unique_ptr<PrototypeAST> ParseExtern();
+
+	/// toplevelexpr ::= expression
+	std::unique_ptr<FunctionAST> ParseTopLevelExpr();
 
 };

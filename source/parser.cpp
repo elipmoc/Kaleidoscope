@@ -144,3 +144,55 @@ std::unique_ptr<ExprAST> Parser::ParseBinOpRHS(int ExprPrec,std::unique_ptr<Expr
 		LHS = std::make_unique<BinaryExprAST>(BinOp, std::move(LHS),std::move(RHS));
 	}  // loop around to the top of the while loop.
 }
+
+/// prototype
+///   ::= id '(' id* ')'
+std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
+	if (curTok.token != tok_identifier)
+		return LogErrorP("Expected function name in prototype");
+
+	std::string FnName = curTok.identifierStr;
+	getNextToken();
+
+	if (curTok.thisChar != '(')
+		return LogErrorP("Expected '(' in prototype");
+
+	// Read the list of argument names.
+	std::vector<std::string> ArgNames;
+	while (getNextToken().token == tok_identifier)
+		ArgNames.push_back(curTok.identifierStr);
+	if (curTok.thisChar != ')')
+		return LogErrorP("Expected ')' in prototype");
+
+	// success.
+	getNextToken();  // eat ')'.
+
+	return std::make_unique<PrototypeAST>(FnName, std::move(ArgNames));
+}
+
+/// definition ::= 'def' prototype expression
+std::unique_ptr<FunctionAST> Parser::ParseDefinition() {
+	getNextToken();  // eat def.
+	auto Proto = ParsePrototype();
+	if (!Proto) return nullptr;
+
+	if (auto E = ParseExpression())
+		return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+	return nullptr;
+}
+
+/// external ::= 'extern' prototype
+std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
+	getNextToken();  // eat extern.
+	return ParsePrototype();
+}
+
+/// toplevelexpr ::= expression
+std::unique_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
+	if (auto E = ParseExpression()) {
+		// Make an anonymous proto.
+		auto Proto = std::make_unique<PrototypeAST>("", std::vector<std::string>());
+		return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+	}
+	return nullptr;
+}
