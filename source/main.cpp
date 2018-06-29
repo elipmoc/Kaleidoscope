@@ -1,7 +1,9 @@
 #include <iostream>
 #include "llvm/IR/IRBuilder.h"
+#include "parser.hpp"
 void main()
 {
     std::cout << "hello" << std::endl;
-	while(true){}
+	Parser parser;
+	parser.MainLoop();
 }

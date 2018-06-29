@@ -196,3 +196,61 @@ std::unique_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
 	}
 	return nullptr;
 }
+
+
+void Parser::HandleDefinition() {
+	if (ParseDefinition()) {
+		fprintf(stderr, "Parsed a function definition.\n");
+	}
+	else {
+		// Skip token for error recovery.
+		getNextToken();
+	}
+}
+
+void Parser::HandleExtern() {
+	if (ParseExtern()) {
+		fprintf(stderr, "Parsed an extern\n");
+	}
+	else {
+		// Skip token for error recovery.
+		getNextToken();
+	}
+}
+
+void Parser::HandleTopLevelExpression() {
+	// Evaluate a top-level expression into an anonymous function.
+	if (ParseTopLevelExpr()) {
+		fprintf(stderr, "Parsed a top-level expr\n");
+	}
+	else {
+		// Skip token for error recovery.
+		getNextToken();
+	}
+}
+
+/// top ::= definition | external | expression | ';'
+
+void Parser::MainLoop() {
+	while (1) {
+		fprintf(stderr, "ready> ");
+		switch (curTok.token) {
+		case tok_eof:
+			return;
+		case tok_def:
+			HandleDefinition();
+			break;
+		case tok_extern:
+			HandleExtern();
+			break;
+		case tok_none:
+			if (curTok.thisChar == ';') {
+				getNextToken();
+				break;
+			}
+		default:
+			HandleTopLevelExpression();
+			break;
+		}
+	}
+}

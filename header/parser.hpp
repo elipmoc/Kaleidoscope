@@ -76,4 +76,14 @@ private:
 	/// toplevelexpr ::= expression
 	std::unique_ptr<FunctionAST> ParseTopLevelExpr();
 
+	/// top ::= definition | external | expression | ';'
+public : 
+	void MainLoop();
+private:
+
+	void HandleDefinition();
+
+	void HandleExtern();
+
+	void HandleTopLevelExpression();
 };
