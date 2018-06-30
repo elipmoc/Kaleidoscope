@@ -1,0 +1,4 @@
+D:/Source/Kaleidoscope/build/CMakeFiles/intrinsics_gen.dir
+D:/Source/Kaleidoscope/build/CMakeFiles/a.dir
+D:/Source/Kaleidoscope/build/CMakeFiles/ALL_BUILD.dir
+D:/Source/Kaleidoscope/build/CMakeFiles/ZERO_CHECK.dir
