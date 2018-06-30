@@ -2,11 +2,15 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include "llvm\IR\Value.h"
+
+class CodeGen;
 
 /// ExprAST - Base class for all expression nodes.
 class ExprAST {
 public:
 	virtual ~ExprAST() {}
+	virtual llvm::Value* codegen(CodeGen&) = 0;
 };
 
 /// NumberExprAST - Expression class for numeric literals like "1.0".
@@ -15,6 +19,7 @@ class NumberExprAST : public ExprAST {
 
 public:
 	NumberExprAST(double Val) : Val(Val) {}
+	virtual llvm::Value* codegen(CodeGen&) override;
 };
 
 /// VariableExprAST - Expression class for referencing a variable, like "a".
@@ -23,6 +28,7 @@ class VariableExprAST : public ExprAST {
 
 public:
 	VariableExprAST(const std::string &Name) : Name(Name) {}
+	virtual llvm::Value* codegen(CodeGen&) override;
 };
 
 /// BinaryExprAST - Expression class for a binary operator.
@@ -34,6 +40,7 @@ public:
 	BinaryExprAST(char op, std::unique_ptr<ExprAST> LHS,
 		std::unique_ptr<ExprAST> RHS)
 		: Op(op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+	virtual llvm::Value* codegen(CodeGen&) override;
 };
 
 /// CallExprAST - Expression class for function calls.
@@ -45,6 +52,7 @@ public:
 	CallExprAST(const std::string &Callee,
 		std::vector<std::unique_ptr<ExprAST>> Args)
 		: Callee(Callee), Args(std::move(Args)) {}
+	virtual llvm::Value* codegen(CodeGen&) override;
 };
 
 /// PrototypeAST - This class represents the "prototype" for a function,
@@ -59,6 +67,8 @@ public:
 		: Name(name), Args(std::move(Args)) {}
 
 	const std::string &getName() const { return Name; }
+	virtual llvm::Function* codegen(CodeGen&) ;
+
 };
 
 /// FunctionAST - This class represents a function definition itself.
@@ -70,4 +80,5 @@ public:
 	FunctionAST(std::unique_ptr<PrototypeAST> Proto,
 		std::unique_ptr<ExprAST> Body)
 		: Proto(std::move(Proto)), Body(std::move(Body)) {}
+	virtual llvm::Function* codegen(CodeGen&) ;
 };

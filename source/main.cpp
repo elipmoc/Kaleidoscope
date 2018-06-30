@@ -1,9 +1,10 @@
 #include <iostream>
-#include "llvm/IR/IRBuilder.h"
 #include "parser.hpp"
+
 void main()
 {
     std::cout << "hello" << std::endl;
-	Parser parser;
-	parser.MainLoop();
+	auto codeGen = std::make_unique<CodeGen>();
+	Parser parser(std::move(codeGen));
+	parser.Do();
 }

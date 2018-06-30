@@ -1,7 +1,6 @@
 #pragma once
 
 #include<string>
-
 enum Token {
 	tok_eof=-1,
 	// commands

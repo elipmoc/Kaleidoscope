@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include "ast.hpp"
+#include "llvm/IR/Verifier.h"
 
 TokenResult Parser::getNextToken() {
 	return curTok = gettok();
@@ -199,8 +200,12 @@ std::unique_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
 
 
 void Parser::HandleDefinition() {
-	if (ParseDefinition()) {
-		fprintf(stderr, "Parsed a function definition.\n");
+	if (auto FnAST=ParseDefinition()) {
+		if (auto* FnIR = FnAST->codegen(*codeGen)) {
+			fprintf(stderr, "Parsed a function definition.\n");
+			FnIR->print(llvm::errs());
+			fprintf(stderr, "\n");
+		}
 	}
 	else {
 		// Skip token for error recovery.
@@ -209,8 +214,12 @@ void Parser::HandleDefinition() {
 }
 
 void Parser::HandleExtern() {
-	if (ParseExtern()) {
-		fprintf(stderr, "Parsed an extern\n");
+	if (auto ProtoAST = ParseExtern()) {
+		if (auto* FnIR = ProtoAST->codegen(*codeGen)) {
+			fprintf(stderr, "Parsed an extern\n");
+			FnIR->print(llvm::errs());
+			fprintf(stderr, "\n");
+		}
 	}
 	else {
 		// Skip token for error recovery.
@@ -220,8 +229,12 @@ void Parser::HandleExtern() {
 
 void Parser::HandleTopLevelExpression() {
 	// Evaluate a top-level expression into an anonymous function.
-	if (ParseTopLevelExpr()) {
-		fprintf(stderr, "Parsed a top-level expr\n");
+	if (auto FnAST = ParseTopLevelExpr()) {
+		if (auto* FnIR = FnAST->codegen(*codeGen)) {
+			fprintf(stderr, "Parsed a top-level expr\n");
+			FnIR->print(llvm::errs());
+			fprintf(stderr, "\n");
+		}
 	}
 	else {
 		// Skip token for error recovery.
@@ -253,4 +266,9 @@ void Parser::MainLoop() {
 			break;
 		}
 	}
+}
+
+void Parser::Do() {
+	MainLoop();
+	codeGen->theModule->print(llvm::errs(), nullptr);
 }

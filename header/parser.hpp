@@ -3,6 +3,7 @@
 #include "lexer.hpp"
 #include <memory>
 #include <map>
+#include "codeGen.hpp"
 
 class ExprAST;
 class PrototypeAST;
@@ -15,16 +16,18 @@ class Parser {
 	/// BinopPrecedence - This holds the precedence for each binary operator that is
 	/// defined.
 	std::map<char, int> binopPrecedence;
+	std::unique_ptr<CodeGen> codeGen;
 
 public:
 
-	Parser() {
+	Parser(std::unique_ptr<CodeGen>&& codeGen):codeGen(std::move(codeGen)) {
 		// Install standard binary operators.
 		// 1 is lowest precedence.
 		binopPrecedence['<'] = 10;
 		binopPrecedence['+'] = 20;
 		binopPrecedence['-'] = 20;
 		binopPrecedence['*'] = 40;  // highest.
+		
 	};
 
 private:
@@ -79,6 +82,7 @@ private:
 	/// top ::= definition | external | expression | ';'
 public : 
 	void MainLoop();
+	void Do();
 private:
 
 	void HandleDefinition();
@@ -86,4 +90,5 @@ private:
 	void HandleExtern();
 
 	void HandleTopLevelExpression();
+
 };
