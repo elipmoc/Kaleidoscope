@@ -269,6 +269,8 @@ void Parser::MainLoop() {
 }
 
 void Parser::Do() {
+	fprintf(stderr, "ready> ");
+	getNextToken();
 	MainLoop();
 	codeGen->theModule->print(llvm::errs(), nullptr);
 }
