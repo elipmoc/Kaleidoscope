@@ -1,20 +1,12 @@
 #include "parser.hpp"
 #include "ast.hpp"
+#include "logError.hpp"
 #include "llvm/IR/Verifier.h"
 
 TokenResult Parser::getNextToken() {
 	return curTok = gettok();
 }
 
-/// LogError* - These are little helper functions for error handling.
-std::unique_ptr<ExprAST> Parser::LogError(const char *Str) {
-	fprintf(stderr, "LogError: %s\n", Str);
-	return nullptr;
-}
-std::unique_ptr<PrototypeAST> Parser::LogErrorP(const char *Str) {
-	LogError(Str);
-	return nullptr;
-}
 
 /// numberexpr ::= number
 std::unique_ptr<ExprAST> Parser::ParseNumberExpr() {
@@ -31,7 +23,7 @@ std::unique_ptr<ExprAST> Parser::ParseParenExpr() {
 		return nullptr;
 
 	if (curTok.thisChar != ')')
-		return LogError("expected ')'");
+		return LogError::LogError("expected ')'");
 	getNextToken(); // eat ).
 	return V;
 }
@@ -61,7 +53,7 @@ std::unique_ptr<ExprAST> Parser::ParseIdentifierExpr() {
 				break;
 
 			if (curTok.thisChar != ',')
-				return LogError("Expected ')' or ',' in argument list");
+				return LogError::LogError("Expected ')' or ',' in argument list");
 			getNextToken();
 		}
 	}
@@ -79,7 +71,7 @@ std::unique_ptr<ExprAST> Parser::ParseIdentifierExpr() {
 std::unique_ptr<ExprAST> Parser::ParsePrimary() {
 	switch (curTok.token) {
 	default:
-		return LogError("unknown token when expecting an expression");
+		return LogError::LogError("unknown token when expecting an expression");
 	case tok_identifier:
 		return ParseIdentifierExpr();
 	case tok_number:
@@ -87,7 +79,7 @@ std::unique_ptr<ExprAST> Parser::ParsePrimary() {
 	case tok_none:
 		if (curTok.thisChar == '(')
 			return ParseParenExpr();
-		return LogError("unknown token when expecting an expression");
+		return LogError::LogError("unknown token when expecting an expression");
 	}
 }
 
@@ -150,20 +142,20 @@ std::unique_ptr<ExprAST> Parser::ParseBinOpRHS(int ExprPrec,std::unique_ptr<Expr
 ///   ::= id '(' id* ')'
 std::unique_ptr<PrototypeAST> Parser::ParsePrototype() {
 	if (curTok.token != tok_identifier)
-		return LogErrorP("Expected function name in prototype");
+		return LogError::LogErrorP("Expected function name in prototype");
 
 	std::string FnName = curTok.identifierStr;
 	getNextToken();
 
 	if (curTok.thisChar != '(')
-		return LogErrorP("Expected '(' in prototype");
+		return LogError::LogErrorP("Expected '(' in prototype");
 
 	// Read the list of argument names.
 	std::vector<std::string> ArgNames;
 	while (getNextToken().token == tok_identifier)
 		ArgNames.push_back(curTok.identifierStr);
 	if (curTok.thisChar != ')')
-		return LogErrorP("Expected ')' in prototype");
+		return LogError::LogErrorP("Expected ')' in prototype");
 
 	// success.
 	getNextToken();  // eat ')'.

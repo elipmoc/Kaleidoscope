@@ -309,10 +309,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\source\logError.cpp" />
     <ClCompile Include="D:\Source\Kaleidoscope\source\ast.cpp" />
     <ClCompile Include="D:\Source\Kaleidoscope\source\lexer.cpp" />
     <ClCompile Include="D:\Source\Kaleidoscope\source\main.cpp" />
     <ClCompile Include="D:\Source\Kaleidoscope\source\parser.cpp" />
+    <ClInclude Include="..\header\logError.hpp" />
     <ClInclude Include="D:\Source\Kaleidoscope\header\ast.hpp" />
     <ClInclude Include="D:\Source\Kaleidoscope\header\codeGen.hpp" />
     <ClInclude Include="D:\Source\Kaleidoscope\header\lexer.hpp" />

@@ -13,6 +13,9 @@
     <ClCompile Include="D:\Source\Kaleidoscope\source\parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\source\logError.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D:\Source\Kaleidoscope\header\ast.hpp">
@@ -25,6 +28,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="D:\Source\Kaleidoscope\header\parser.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\header\logError.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

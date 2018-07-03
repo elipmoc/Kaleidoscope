@@ -11,9 +11,4 @@ public:
 	CodeGen():builder(theContext) {
 		theModule= std::make_unique<llvm::Module>("my cool jit", theContext);
 	}
-
-	llvm::Value *LogErrorV(const char *Str) {
-		fprintf(stderr, "LogError: %s\n", Str);
-		return nullptr;
-	}
 };

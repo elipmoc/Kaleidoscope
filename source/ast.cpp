@@ -1,5 +1,6 @@
 #include "ast.hpp"
 #include "codeGen.hpp"
+#include "logError.hpp"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
@@ -13,7 +14,7 @@ llvm::Value * VariableExprAST::codegen(CodeGen& codeGen)
 	// Look this variable up in the function.
 	llvm::Value* V = codeGen.namedValues[Name];
 	if (!V)
-		codeGen.LogErrorV("Unknown variable name");
+		LogError::LogErrorV("Unknown variable name");
 	return V;
 }
 
@@ -35,7 +36,7 @@ llvm::Value *BinaryExprAST::codegen(CodeGen& codeGen) {
 		return codeGen.builder.CreateUIToFP(L, llvm::Type::getDoubleTy(codeGen.theContext),
 			"booltmp");
 	default:
-		return codeGen.LogErrorV("invalid binary operator");
+		return LogError::LogErrorV("invalid binary operator");
 	}
 	llvm::llvm_unreachable_internal("", "", 0);
 
@@ -45,11 +46,11 @@ llvm::Value *CallExprAST::codegen(CodeGen& codeGen) {
 	// Look up the name in the global module table.
 	llvm::Function *CalleeF = codeGen.theModule->getFunction(Callee);
 	if (!CalleeF)
-		return codeGen.LogErrorV("Unknown function referenced");
+		return LogError::LogErrorV("Unknown function referenced");
 
 	// If argument mismatch error.
 	if (CalleeF->arg_size() != Args.size())
-		return codeGen.LogErrorV("Incorrect # arguments passed");
+		return LogError::LogErrorV("Incorrect # arguments passed");
 
 	std::vector<llvm::Value *> ArgsV;
 	for (unsigned i = 0, e = Args.size(); i != e; ++i) {
@@ -89,7 +90,7 @@ llvm::Function *FunctionAST::codegen(CodeGen& codeGen) {
 		return nullptr;
 
 	if (!TheFunction->empty())
-		return (llvm::Function*)codeGen.LogErrorV("Function cannot be redefined.");
+		return (llvm::Function*)LogError::LogErrorV("Function cannot be redefined.");
 	// Create a new basic block to start insertion into.
 	llvm::BasicBlock *BB = llvm::BasicBlock::Create(codeGen.theContext, "entry", TheFunction);
 	codeGen.builder.SetInsertPoint(BB);

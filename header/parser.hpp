@@ -34,10 +34,6 @@ private:
 
 	TokenResult getNextToken();
 
-	/// LogError* - These are little helper functions for error handling.
-	std::unique_ptr<ExprAST> LogError(const char *Str);
-	std::unique_ptr<PrototypeAST> LogErrorP(const char *Str);
-
 	/// numberexpr ::= number
 	std::unique_ptr<ExprAST> ParseNumberExpr();
 	/// parenexpr ::= '(' expression ')'
