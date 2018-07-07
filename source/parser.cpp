@@ -226,13 +226,13 @@ void Parser::HandleExtern() {
 void Parser::HandleTopLevelExpression() {
 	// Evaluate a top-level expression into an anonymous function.
 	if (auto FnAST = ParseTopLevelExpr()) {
-		if (FnAST->codegen(*codeGen)) {
+		if (auto* FnIR=FnAST->codegen(*codeGen)) {
+			FnIR->print(llvm::errs());
 			auto H = codeGen->addModuleToJit();
 			codeGen->InitializeModuleAndPassManager();
 			// Search the JIT for the __anon_expr symbol.
 			auto ExprSymbol = codeGen->theJIT->findSymbol("__anon_expr");
 			assert(ExprSymbol && "Function not found");
-
 			// Get the symbol's address and cast it to the right type (takes no
 			// arguments, returns a double) so we can call it as a native function.
 			double(*FP)() = (double(*)())(intptr_t)llvm::cantFail(ExprSymbol.getAddress());
