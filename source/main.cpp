@@ -1,6 +1,6 @@
 #include <iostream>
 #include "parser.hpp"
-
+#include "externFunc.hpp"
 void main()
 {
 

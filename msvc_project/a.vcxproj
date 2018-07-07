@@ -314,6 +314,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\Source\Kaleidoscope\source\logError.cpp" />
     <ClCompile Include="D:\Source\Kaleidoscope\source\main.cpp" />
     <ClCompile Include="D:\Source\Kaleidoscope\source\parser.cpp" />
+    <ClInclude Include="..\header\externFunc.hpp" />
     <ClInclude Include="D:\Source\Kaleidoscope\header\KaleidoscopeJIT.hpp" />
     <ClInclude Include="D:\Source\Kaleidoscope\header\ast.hpp" />
     <ClInclude Include="D:\Source\Kaleidoscope\header\codeGen.hpp" />

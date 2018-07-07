@@ -36,6 +36,9 @@
     <ClInclude Include="D:\Source\Kaleidoscope\header\parser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\header\externFunc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="D:\Source\Kaleidoscope\CMakeLists.txt" />
