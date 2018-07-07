@@ -184,9 +184,10 @@ std::unique_ptr<PrototypeAST> Parser::ParseExtern() {
 std::unique_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
 	if (auto E = ParseExpression()) {
 		// Make an anonymous proto.
-		auto Proto = std::make_unique<PrototypeAST>("", std::vector<std::string>());
+		auto Proto = std::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
 		return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
 	}
+
 	return nullptr;
 }
 
@@ -194,9 +195,11 @@ std::unique_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
 void Parser::HandleDefinition() {
 	if (auto FnAST=ParseDefinition()) {
 		if (auto* FnIR = FnAST->codegen(*codeGen)) {
-			fprintf(stderr, "Parsed a function definition.\n");
+			fprintf(stderr, "Read function definition:");
 			FnIR->print(llvm::errs());
 			fprintf(stderr, "\n");
+			codeGen->addModuleToJit();
+			codeGen->InitializeModuleAndPassManager();
 		}
 	}
 	else {
@@ -208,9 +211,10 @@ void Parser::HandleDefinition() {
 void Parser::HandleExtern() {
 	if (auto ProtoAST = ParseExtern()) {
 		if (auto* FnIR = ProtoAST->codegen(*codeGen)) {
-			fprintf(stderr, "Parsed an extern\n");
+			fprintf(stderr, "Read extern: ");
 			FnIR->print(llvm::errs());
 			fprintf(stderr, "\n");
+			codeGen->functionProtos[ProtoAST->getName()] = std::move(ProtoAST);
 		}
 	}
 	else {
@@ -222,10 +226,18 @@ void Parser::HandleExtern() {
 void Parser::HandleTopLevelExpression() {
 	// Evaluate a top-level expression into an anonymous function.
 	if (auto FnAST = ParseTopLevelExpr()) {
-		if (auto* FnIR = FnAST->codegen(*codeGen)) {
-			fprintf(stderr, "Parsed a top-level expr\n");
-			FnIR->print(llvm::errs());
-			fprintf(stderr, "\n");
+		if (FnAST->codegen(*codeGen)) {
+			auto H = codeGen->addModuleToJit();
+			codeGen->InitializeModuleAndPassManager();
+			// Search the JIT for the __anon_expr symbol.
+			auto ExprSymbol = codeGen->theJIT->findSymbol("__anon_expr");
+			assert(ExprSymbol && "Function not found");
+
+			// Get the symbol's address and cast it to the right type (takes no
+			// arguments, returns a double) so we can call it as a native function.
+			double(*FP)() = (double(*)())(intptr_t)llvm::cantFail(ExprSymbol.getAddress());
+			fprintf(stderr, "Evaluated to %f\n", FP());
+			codeGen->removeModuleFromJit(H);
 		}
 	}
 	else {
@@ -258,11 +270,12 @@ void Parser::MainLoop() {
 			break;
 		}
 	}
-}
 
+}
 void Parser::Do() {
 	fprintf(stderr, "ready> ");
 	getNextToken();
+	codeGen->InitializeModuleAndPassManager();
 	MainLoop();
 	codeGen->theModule->print(llvm::errs(), nullptr);
 }

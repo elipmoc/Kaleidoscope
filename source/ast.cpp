@@ -4,6 +4,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/IR/Function.h"
 
 llvm::Value *NumberExprAST::codegen(CodeGen& codeGen) {
 	return llvm::ConstantFP::get(codeGen.theContext, llvm::APFloat(Val));
@@ -44,7 +45,7 @@ llvm::Value *BinaryExprAST::codegen(CodeGen& codeGen) {
 
 llvm::Value *CallExprAST::codegen(CodeGen& codeGen) {
 	// Look up the name in the global module table.
-	llvm::Function *CalleeF = codeGen.theModule->getFunction(Callee);
+	llvm::Function *CalleeF = getFunction(Callee,codeGen);
 	if (!CalleeF)
 		return LogError::LogErrorV("Unknown function referenced");
 
@@ -80,17 +81,13 @@ llvm::Function *PrototypeAST::codegen(CodeGen& codeGen) {
 }
 
 llvm::Function *FunctionAST::codegen(CodeGen& codeGen) {
-	// First, check for an existing function from a previous 'extern' declaration.
-	llvm::Function *TheFunction = codeGen.theModule->getFunction(Proto->getName());
-
-	if (!TheFunction)
-		TheFunction = Proto->codegen(codeGen);
-
+	// Transfer ownership of the prototype to the FunctionProtos map, but keep a
+	// reference to it for use below.
+	auto &P = *Proto;
+	codeGen.functionProtos[Proto->getName()] = std::move(Proto);
+	llvm::Function* TheFunction = getFunction(P.getName(),codeGen);
 	if (!TheFunction)
 		return nullptr;
-
-	if (!TheFunction->empty())
-		return (llvm::Function*)LogError::LogErrorV("Function cannot be redefined.");
 	// Create a new basic block to start insertion into.
 	llvm::BasicBlock *BB = llvm::BasicBlock::Create(codeGen.theContext, "entry", TheFunction);
 	codeGen.builder.SetInsertPoint(BB);
@@ -105,10 +102,26 @@ llvm::Function *FunctionAST::codegen(CodeGen& codeGen) {
 
 		// Validate the generated code, checking for consistency.
 		llvm::verifyFunction(*TheFunction);
-
+		codeGen.theFPM->run(*TheFunction);
 		return TheFunction;
 	}
 	// Error reading body, remove function.
 	TheFunction->eraseFromParent();
+	return nullptr;
+}
+
+llvm::Function * getFunction(std::string Name, CodeGen & codeGen)
+{
+	// First, see if the function has already been added to the current module.
+	if (auto *F = codeGen.theModule->getFunction(Name))
+		return F;
+
+	// If not, check whether we can codegen the declaration from some existing
+	// prototype.
+	auto FI = codeGen.functionProtos.find(Name);
+	if (FI != codeGen.functionProtos.end())
+		return FI->second->codegen(codeGen);
+
+	// If no existing prototype exists, return null.
 	return nullptr;
 }

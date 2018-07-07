@@ -82,3 +82,5 @@ public:
 		: Proto(std::move(Proto)), Body(std::move(Body)) {}
 	virtual llvm::Function* codegen(CodeGen&) ;
 };
+
+llvm::Function* getFunction(std::string Name, CodeGen&);
