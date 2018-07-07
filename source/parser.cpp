@@ -76,6 +76,8 @@ std::unique_ptr<ExprAST> Parser::ParsePrimary() {
 		return ParseIdentifierExpr();
 	case tok_number:
 		return ParseNumberExpr();
+	case tok_if:
+		return ParseIfExpr();
 	case tok_none:
 		if (curTok.thisChar == '(')
 			return ParseParenExpr();
@@ -189,6 +191,36 @@ std::unique_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
 	}
 
 	return nullptr;
+}
+
+std::unique_ptr<ExprAST> Parser::ParseIfExpr()
+{
+	getNextToken();  // eat the if.
+
+					 // condition.
+	auto Cond = ParseExpression();
+	if (!Cond)
+		return nullptr;
+
+	if (curTok.token != tok_then)
+		return LogError::LogError("expected then");
+	getNextToken();  // eat the then
+
+	auto Then = ParseExpression();
+	if (!Then)
+		return nullptr;
+
+	if (curTok.token != tok_else)
+		return LogError::LogError("expected else");
+
+	getNextToken();
+
+	auto Else = ParseExpression();
+	if (!Else)
+		return nullptr;
+
+	return llvm::make_unique<IfExprAST>(std::move(Cond), std::move(Then),
+		std::move(Else));
 }
 
 

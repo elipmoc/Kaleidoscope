@@ -12,7 +12,11 @@ enum Token {
 	tok_number = -5,
 
 	//no match
-	tok_none=-6
+	tok_none=-6,
+
+	tok_if=-7,
+	tok_then=-8,
+	tok_else=-9
 };
 
 struct TokenResult {

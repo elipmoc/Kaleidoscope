@@ -75,6 +75,8 @@ private:
 	/// toplevelexpr ::= expression
 	std::unique_ptr<FunctionAST> ParseTopLevelExpr();
 
+	std::unique_ptr<ExprAST> ParseIfExpr();
+
 	/// top ::= definition | external | expression | ';'
 public : 
 	void MainLoop();

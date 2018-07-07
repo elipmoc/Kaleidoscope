@@ -5,6 +5,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/Value.h"
 
 llvm::Value *NumberExprAST::codegen(CodeGen& codeGen) {
 	return llvm::ConstantFP::get(codeGen.theContext, llvm::APFloat(Val));
@@ -124,4 +125,55 @@ llvm::Function * getFunction(std::string Name, CodeGen & codeGen)
 
 	// If no existing prototype exists, return null.
 	return nullptr;
+}
+
+llvm::Value * IfExprAST::codegen(CodeGen & codeGen)
+{
+	llvm::Value *CondV = Cond->codegen(codeGen);
+	if (!CondV)
+		return nullptr;
+
+	// Convert condition to a bool by comparing non-equal to 0.0.
+	CondV = codeGen.builder.CreateFCmpONE(
+		CondV, llvm::ConstantFP::get(codeGen.theContext, llvm::APFloat(0.0)), "ifcond");
+	llvm::Function *TheFunction = codeGen.builder.GetInsertBlock()->getParent();
+
+	// Create blocks for the then and else cases.  Insert the 'then' block at the
+	// end of the function.
+	llvm::BasicBlock *ThenBB =
+		llvm::BasicBlock::Create(codeGen.theContext, "then", TheFunction);
+	llvm::BasicBlock *ElseBB = llvm::BasicBlock::Create(codeGen.theContext, "else");
+	llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(codeGen.theContext, "ifcont");
+
+	codeGen.builder.CreateCondBr(CondV, ThenBB, ElseBB);
+	// Emit then value.
+	codeGen.builder.SetInsertPoint(ThenBB);
+
+	llvm::Value *ThenV = Then->codegen(codeGen);
+	if (!ThenV)
+		return nullptr;
+
+	codeGen.builder.CreateBr(MergeBB);
+	// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+	ThenBB = codeGen.builder.GetInsertBlock();
+	// Emit else block.
+	TheFunction->getBasicBlockList().push_back(ElseBB);
+	codeGen.builder.SetInsertPoint(ElseBB);
+
+	llvm::Value *ElseV = Else->codegen(codeGen);
+	if (!ElseV)
+		return nullptr;
+
+	codeGen.builder.CreateBr(MergeBB);
+	// codegen of 'Else' can change the current block, update ElseBB for the PHI.
+	ElseBB = codeGen.builder.GetInsertBlock();
+	// Emit merge block.
+	TheFunction->getBasicBlockList().push_back(MergeBB);
+	codeGen.builder.SetInsertPoint(MergeBB);
+	llvm::PHINode *PN =
+		codeGen.builder.CreatePHI(llvm::Type::getDoubleTy(codeGen.theContext), 2, "iftmp");
+
+	PN->addIncoming(ThenV, ThenBB);
+	PN->addIncoming(ElseV, ElseBB);
+	return PN;
 }

@@ -17,7 +17,13 @@ TokenResult gettok() {
 			tr.token = tok_def;
 		else if (tr.identifierStr == "extern")
 			tr.token = tok_extern;
-		else tr.token=tok_identifier;
+		else if (tr.identifierStr == "if")
+			tr.token=tok_if;
+		else if (tr.identifierStr == "then")
+			tr.token=tok_then;
+		else if (tr.identifierStr == "else")
+			tr.token=tok_else;
+		else tr.token = tok_identifier;
 		return tr;
 	}
 	if (isdigit(LastChar) || LastChar == '.') {   // Number: [0-9.]+
