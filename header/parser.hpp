@@ -77,6 +77,9 @@ private:
 
 	std::unique_ptr<ExprAST> ParseIfExpr();
 
+	/// forexpr ::= 'for' identifier '=' expr ',' expr (',' expr)? 'in' expression
+	std::unique_ptr<ExprAST> ParseForExpr();
+
 	/// top ::= definition | external | expression | ';'
 public : 
 	void MainLoop();

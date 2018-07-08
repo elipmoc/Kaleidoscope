@@ -177,3 +177,85 @@ llvm::Value * IfExprAST::codegen(CodeGen & codeGen)
 	PN->addIncoming(ElseV, ElseBB);
 	return PN;
 }
+
+llvm::Value * ForExprAST::codegen(CodeGen & codeGen)
+{
+	// Emit the start code first, without 'variable' in scope.
+	llvm::Value *StartVal = Start->codegen(codeGen);
+	if (!StartVal)
+		return nullptr;
+
+	// Make the new basic block for the loop header, inserting after current
+	// block.
+	llvm::Function *TheFunction = codeGen.builder.GetInsertBlock()->getParent();
+	llvm::BasicBlock *PreheaderBB = codeGen.builder.GetInsertBlock();
+	llvm::BasicBlock *LoopBB = llvm::BasicBlock::Create(codeGen.theContext, "loop", TheFunction);
+
+	// Insert an explicit fall through from the current block to the LoopBB.
+	codeGen.builder.CreateBr(LoopBB);
+
+	// Start insertion in LoopBB.
+	codeGen.builder.SetInsertPoint(LoopBB);
+
+	// Start the PHI node with an entry for Start.
+	llvm::PHINode *Variable =
+		codeGen.builder.CreatePHI(llvm::Type::getDoubleTy(codeGen.theContext), 2, VarName);
+	Variable->addIncoming(StartVal, PreheaderBB);
+
+	// Within the loop, the variable is defined equal to the PHI node.  If it
+	// shadows an existing variable, we have to restore it, so save it now.
+	llvm::Value *OldVal = codeGen.namedValues[VarName];
+	codeGen.namedValues[VarName] = Variable;
+
+	// Emit the body of the loop.  This, like any other expr, can change the
+	// current BB.  Note that we ignore the value computed by the body, but don't
+	// allow an error.
+	if (!Body->codegen(codeGen))
+		return nullptr;
+
+	// Emit the step value.
+	llvm::Value *StepVal = nullptr;
+	if (Step) {
+		StepVal = Step->codegen(codeGen);
+		if (!StepVal)
+			return nullptr;
+	}
+	else {
+		// If not specified, use 1.0.
+		StepVal = llvm::ConstantFP::get(codeGen.theContext, llvm::APFloat(1.0));
+	}
+
+	llvm::Value *NextVar = codeGen.builder.CreateFAdd(Variable, StepVal, "nextvar");
+
+	// Compute the end condition.
+	llvm::Value *EndCond = End->codegen(codeGen);
+	if (!EndCond)
+		return nullptr;
+
+	// Convert condition to a bool by comparing non-equal to 0.0.
+	EndCond = codeGen.builder.CreateFCmpONE(
+		EndCond, llvm:: ConstantFP::get(codeGen.theContext, llvm::APFloat(0.0)), "loopcond");
+
+	// Create the "after loop" block and insert it.
+	llvm::BasicBlock *LoopEndBB = codeGen.builder.GetInsertBlock();
+	llvm::BasicBlock *AfterBB =
+		llvm::BasicBlock::Create(codeGen.theContext, "afterloop", TheFunction);
+
+	// Insert the conditional branch into the end of LoopEndBB.
+	codeGen.builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+
+	// Any new code will be inserted in AfterBB.
+	codeGen.builder.SetInsertPoint(AfterBB);
+
+	// Add a new entry to the PHI node for the backedge.
+	Variable->addIncoming(NextVar, LoopEndBB);
+
+	// Restore the unshadowed variable.
+	if (OldVal)
+		codeGen.namedValues[VarName] = OldVal;
+	else
+		codeGen.namedValues.erase(VarName);
+
+	// for expr always returns 0.0.
+	return llvm::Constant::getNullValue(llvm::Type::getDoubleTy(codeGen.theContext));
+}

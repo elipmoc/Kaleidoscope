@@ -78,6 +78,8 @@ std::unique_ptr<ExprAST> Parser::ParsePrimary() {
 		return ParseNumberExpr();
 	case tok_if:
 		return ParseIfExpr();
+	case tok_for:
+		return ParseForExpr();
 	case tok_none:
 		if (curTok.thisChar == '(')
 			return ParseParenExpr();
@@ -221,6 +223,54 @@ std::unique_ptr<ExprAST> Parser::ParseIfExpr()
 
 	return llvm::make_unique<IfExprAST>(std::move(Cond), std::move(Then),
 		std::move(Else));
+}
+
+std::unique_ptr<ExprAST> Parser::ParseForExpr()
+{
+	getNextToken();  // eat the for.
+
+	if (curTok.token != tok_identifier)
+		return LogError::LogError("expected identifier after for");
+
+	std::string IdName = curTok.identifierStr;
+	getNextToken();  // eat identifier.
+
+	if (curTok.thisChar != '=')
+		return LogError::LogError("expected '=' after for");
+	getNextToken();  // eat '='.
+
+
+	auto Start = ParseExpression();
+	if (!Start)
+		return nullptr;
+	if (curTok.thisChar != ',')
+		return LogError::LogError("expected ',' after for start value");
+	getNextToken();
+
+	auto End = ParseExpression();
+	if (!End)
+		return nullptr;
+
+	// The step value is optional.
+	std::unique_ptr<ExprAST> Step;
+	if (curTok.thisChar == ',') {
+		getNextToken();
+		Step = ParseExpression();
+		if (!Step)
+			return nullptr;
+	}
+
+	if (curTok.token != tok_in)
+		return LogError::LogError("expected 'in' after for");
+	getNextToken();  // eat 'in'.
+
+	auto Body = ParseExpression();
+	if (!Body)
+		return nullptr;
+
+	return llvm::make_unique<ForExprAST>(IdName, std::move(Start),
+		std::move(End), std::move(Step),
+		std::move(Body));
 }
 
 

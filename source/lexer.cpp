@@ -23,6 +23,10 @@ TokenResult gettok() {
 			tr.token=tok_then;
 		else if (tr.identifierStr == "else")
 			tr.token=tok_else;
+		else if (tr.identifierStr == "for")
+			tr.token = tok_for;
+		else if (tr.identifierStr == "in")
+			tr.token = tok_in;
 		else tr.token = tok_identifier;
 		return tr;
 	}
